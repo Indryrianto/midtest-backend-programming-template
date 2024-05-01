@@ -8,14 +8,59 @@ const { errorResponder, errorTypes } = require('../../../core/errors');
  * @param {object} next - Express route middlewares
  * @returns {object} Response object or pass an error to the next route
  */
+const searchUsers = (users, searchQuery) => {
+  if (!searchQuery) return users;
+  const regex = new RegExp(searchQuery, 'i');
+  return users.filter(user => regex.test(user.username));
+};
+
+const sortUsers = (users, sortBy, sortOrder) => {
+  const sortFunc = (a, b) => {
+    const fieldA = a[sortBy].toLowerCase();
+    const fieldB = b[sortBy].toLowerCase();
+    return sortOrder === 'asc' ? fieldA.localeCompare(fieldB) : fieldB.localeCompare(fieldA);
+  };
+  return sortBy && sortOrder ? users.sort(sortFunc) : users;
+};
+
 async function getUsers(request, response, next) {
   try {
-    const users = await usersService.getUsers();
-    return response.status(200).json(users);
+    const { page_number = 1, page_size = 10, search_query, sort_by, sort_order } = request.query;
+
+    let users = await usersService.getUsers();
+
+    users = searchUsers(users, search_query);
+    if (users.length === 0 && search_query) {
+      return response.status(404).json({ message: `No users found matching the search query: ${search_query}` });
+    }
+
+    users = sortUsers(users, sort_by, sort_order);
+
+    const totalUsers = users.length;
+    const totalPages = Math.ceil(totalUsers / page_size);
+    const startIndex = (page_number - 1) * page_size;
+    const endIndex = Math.min(startIndex + page_size, totalUsers);
+    const data = users.slice(startIndex, endIndex);
+
+    const responseObj = {
+      page_number: parseInt(page_number),
+      page_size: parseInt(page_size),
+      count: data.length,
+      total_pages: totalPages,
+      has_previous_page: page_number > 1,
+      has_next_page: page_number < totalPages,
+      data: data,
+    };
+
+    response.status(200).json(responseObj);
   } catch (error) {
-    return next(error);
+    console.error('Error in getUsers:', error);
+    response.status(500).json({ message: 'Internal server error' });
   }
 }
+
+
+
 
 /**
  * Handle get user detail request
