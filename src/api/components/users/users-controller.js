@@ -8,33 +8,18 @@ const { errorResponder, errorTypes } = require('../../../core/errors');
  * @param {object} next - Express route middlewares
  * @returns {object} Response object or pass an error to the next route
  */
-const searchUsers = (users, searchQuery) => {
-  if (!searchQuery) return users;
-  const regex = new RegExp(searchQuery, 'i');
-  return users.filter(user => regex.test(user.username));
-};
-
-const sortUsers = (users, sortBy, sortOrder) => {
-  const sortFunc = (a, b) => {
-    const fieldA = a[sortBy].toLowerCase();
-    const fieldB = b[sortBy].toLowerCase();
-    return sortOrder === 'asc' ? fieldA.localeCompare(fieldB) : fieldB.localeCompare(fieldA);
-  };
-  return sortBy && sortOrder ? users.sort(sortFunc) : users;
-};
-
-async function getUsers(request, response, next) {
+async function getUsers(request, response) {
   try {
-    const { page_number = 1, page_size = 10, search_query, sort_by, sort_order } = request.query;
+    const { page_number = 1, page_size = 10, search_Query} = request.query;
 
-    let users = await usersService.getUsers();
+    const users = await usersService.getUsers();
 
-    users = searchUsers(users, search_query);
-    if (users.length === 0 && search_query) {
-      return response.status(404).json({ message: `No users found matching the search query: ${search_query}` });
+    if (search_Query) {
+      users = searchUsers(users, search_Query);
+      if (users.length === 0) {
+        return response.status(404).json({ message: `No users found matching the search query: ${search_Query}` });
+      }
     }
-
-    users = sortUsers(users, sort_by, sort_order);
 
     const totalUsers = users.length;
     const totalPages = Math.ceil(totalUsers / page_size);
@@ -57,8 +42,7 @@ async function getUsers(request, response, next) {
     console.error('Error in getUsers:', error);
     response.status(500).json({ message: 'Internal server error' });
   }
-}
-
+};
 
 
 

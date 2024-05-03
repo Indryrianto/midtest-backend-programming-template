@@ -5,38 +5,17 @@ const { hashPassword, passwordMatched } = require('../../../utils/password');
  * Get list of users
  * @returns {Array}
  */
-const searchUsers = (users, searchTerm) => {
-  const regex = new RegExp(searchTerm, 'i');
-  return users.filter(user => regex.test(user.name.toLowerCase()) || regex.test(user.email.toLowerCase()));
-};
-
-const sortUsers = (users, sortBy, sortOrder) => {
-  const isValidSortField = field => ['name', 'email'].includes(field);
-  const isValidSortOrder = order => ['asc', 'desc'].includes(order);
-
-  if (!isValidSortField(sortBy) || !isValidSortOrder(sortOrder)) {
-    throw new Error('Invalid sorting parameters.');
-  }
-
-  return users.sort((a, b) => {
-    const fieldA = a[sortBy].toLowerCase();
-    const fieldB = b[sortBy].toLowerCase();
-    return sortOrder === 'asc' ? fieldA.localeCompare(fieldB) : fieldB.localeCompare(fieldA);
-  });
-};
-
-const getUsers = async (searchTerm, sortBy, sortOrder, limit, page) => {
+const getUsers = async (searchTerm) => {
   try {
     let users = await usersRepository.getUsers();
-    users = searchTerm ? searchUsers(users, searchTerm.toLowerCase()) : users;
-    users = sortBy ? sortUsers(users, sortBy, sortOrder) : users;
-    return limit && page ? users.slice((page - 1) * limit, page * limit) : users;
+    if (searchTerm) {
+      users = searchUsers(users, searchTerm.toLowerCase());
+    }
+    return users;
   } catch (error) {
     console.error('Error in getUsers:', error.message);
-    throw error;
   }
 };
-
 
 
 /**
