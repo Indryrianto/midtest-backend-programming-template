@@ -10,7 +10,7 @@ const { errorResponder, errorTypes } = require('../../../core/errors');
  */
 async function getUsers(request, response) {
   try {
-    const { page_number = 1, page_size = 10, search_Query} = request.query;
+    const { page_number = 1, page_size = 10, search_Query, sort_by = 'name', sort_order = 'asc'} = request.query;
 
     const users = await usersService.getUsers();
 
@@ -19,6 +19,10 @@ async function getUsers(request, response) {
       if (users.length === 0) {
         return response.status(404).json({ message: `No users found matching the search query: ${search_Query}` });
       }
+    }
+
+    if (sort_by && sort_order) {
+      users = sortUsers(users, sort_by, sort_order);
     }
 
     const totalUsers = users.length;
@@ -44,6 +48,30 @@ async function getUsers(request, response) {
   }
 };
 
+function searchUsers(users, searchQuery) {
+  return users.filter(user => {
+    return (
+      user.name.toLowerCase().includes(searchQuery) ||
+      user.email.toLowerCase().includes(searchQuery) ||
+      user.phoneNumber.toLowerCase().includes(searchQuery)
+    )
+  });
+};
+
+function sortUsers(users, sort_by, sort_order) {
+  return users.sort((a, b) => {
+    switch (sort_by) {
+      case 'name':
+        return sort_order === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+      case 'email':
+        return sort_order === 'asc' ? a.email.localeCompare(b.email) : b.email.localeCompare(a.email);
+      case 'phoneNumber':
+        return sort_order === 'asc' ? a.phoneNumber.localeCompare(b.phoneNumber) : b.phoneNumber.localeCompare(a.phoneNumber);
+      default:
+        return 0;
+    }
+  });
+};
 
 
 /**

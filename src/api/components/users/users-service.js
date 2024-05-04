@@ -5,11 +5,14 @@ const { hashPassword, passwordMatched } = require('../../../utils/password');
  * Get list of users
  * @returns {Array}
  */
-const getUsers = async (searchTerm) => {
+async function getUsers(searchTerm, sortBy) {
   try {
     let users = await usersRepository.getUsers();
     if (searchTerm) {
       users = searchUsers(users, searchTerm.toLowerCase());
+    }
+    if (sortBy) {
+      users = sortUsers(users, sortBy);
     }
     return users;
   } catch (error) {
@@ -17,6 +20,30 @@ const getUsers = async (searchTerm) => {
   }
 };
 
+function searchUsers(users, searchTerm) {
+  return users.filter(user => {
+    return (
+      user.name.toLowerCase().includes(searchTerm) ||
+      user.email.toLowerCase().includes(searchTerm) ||
+      user.phoneNumber.toLowerCase().includes(searchTerm)
+    )
+  });
+}
+
+function sortUsers(users, sortBy) {
+  return users.sort((a, b) => {
+    switch (sortBy) {
+      case 'name':
+        return a.name.localeCompare(b.name);
+      case 'email':
+        return a.email.localeCompare(b.email);
+      case 'phoneNumber':
+        return a.phoneNumber.localeCompare(b.phoneNumber);
+      default:
+        return 0;
+    }
+  });
+}
 
 /**
  * Get user detail
