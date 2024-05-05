@@ -5,10 +5,10 @@ const { hashPassword, passwordMatched } = require('../../../utils/password');
  * Get list of users
  * @returns {Array}
  */
-async function getUsers(searchTerm, sortBy) {
+async function getUsers(search, sortBy) {
   try {
     let users = await usersRepository.getUsers();
-    if (searchTerm) {
+    if (search) {
       users = searchUsers(users, searchTerm.toLowerCase());
     }
     if (sortBy) {
@@ -20,8 +20,8 @@ async function getUsers(searchTerm, sortBy) {
   }
 }
 
-function searchUsers(users, searchTerm) {
-  const regex = new RegExp(searchTerm, 'i');
+function searchUsers(users, search) {
+  const regex = new RegExp(search, 'i');
   return users.filter(user => {
     return (
       regex.test(user.name) ||

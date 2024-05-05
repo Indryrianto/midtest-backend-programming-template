@@ -12,11 +12,14 @@ async function getUsers(request, response) {
   try {
     const { page_number = 1, page_size = 10, search_Query, sort_by = 'name', sort_order = 'asc'} = request.query;
 
+    page_number = parseInt(page_number);
+    page_size = parseInt(page_size);
+
     const users = await usersService.getUsers();
 
     if (search_Query) {
       users = searchUsers(users, search_Query);
-      if (users.length === 0) {
+      if (users.length == 0) {
         return response.status(404).json({ message: `No users found matching the search query: ${search_Query}` });
       }
     }
@@ -43,9 +46,9 @@ async function getUsers(request, response) {
 
     response.status(200).json(responseObj);
   } catch (error) {
-    console.error('Error in getUsers:', error);
-    response.status(500).json({ message: 'Internal server error' });
-  }
+    console.error( `Error in getUsers:`, error);
+    response.status(500).json({ message:  `Internal server error`})
+  };
 };
 
 function searchUsers(users, searchQuery) {
